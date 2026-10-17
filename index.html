@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10203b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="販売カウンター">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>屋外イベント 販売数・売上カウンター</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#10203b;background:#f3f6fa;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-width:320px;-webkit-font-smoothing:antialiased}
+button,input{font:inherit}button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible{outline:4px solid #407ce8;outline-offset:3px}
+.page{max-width:1380px;margin:0 auto;padding:22px 24px 132px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:13px}.brand-icon{background:#142541;color:white;font-size:23px;font-weight:900;border-radius:14px;padding:14px;line-height:1}
+h1{font-size:clamp(24px,3vw,34px);margin:0 0 3px;letter-spacing:.01em}.sub{margin:0;color:#58677a;font-weight:600;font-size:14px}
+.save-indicator{white-space:nowrap;font-size:14px;font-weight:800;color:#24573f;background:#e1f4e8;padding:9px 13px;border:1px solid #bce3cb;border-radius:999px}
+.panel{background:#fff;border:1px solid #d9e2eb;border-radius:18px;box-shadow:0 4px 16px #1c35540a;padding:18px 20px}
+.event-fields{display:grid;grid-template-columns:minmax(200px,2.3fr) minmax(160px,1fr) minmax(170px,1.4fr);gap:15px;align-items:end}
+label{display:block;font-size:14px;font-weight:900;margin-bottom:6px;color:#3b4b60}
+.field{width:100%;height:50px;border:2px solid #cdd7e3;border-radius:11px;background:white;padding:9px 13px;color:#11233d;font-size:17px;font-weight:650}
+.field::placeholder{color:#77859a}.field:focus{border-color:#366fd1;outline:2px solid #b1cdf7;outline-offset:0}
+.stats{display:grid;grid-template-columns:1.3fr 1fr 0.75fr;gap:14px;margin:15px 0 22px}
+.stat{border-radius:16px;border:1px solid #d4dfec;background:#fff;padding:15px 18px;min-height:93px}
+.stat-label{color:#4d5e74;font-size:14px;font-weight:900}.stat-value{font-size:clamp(27px,4vw,40px);font-weight:950;font-variant-numeric:tabular-nums;line-height:1.25;margin-top:5px}
+.stat-sub{font-size:14px;color:#435976;margin-top:10px;font-weight:850}
+.section-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:22px 0 14px}
+h2{margin:0;font-size:22px;letter-spacing:.02em}
+.btn{border:2px solid transparent;border-radius:12px;min-height:50px;padding:10px 18px;font-weight:900;font-size:16px;background:#e8eef6;color:#172c47}
+.btn:hover{filter:brightness(.965)}.btn:active{transform:translateY(1px)}
+.btn-add{background:#19375e;color:#fff;min-width:174px}
+.products{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.item{background:#fff;border:2px solid #d3deeb;border-radius:17px;padding:17px;min-width:0;box-shadow:0 3px 13px #1c35540a;transition:border-color .15s}
+.item.active{border-color:#2d814a}
+.item-head{display:flex;align-items:center;gap:7px;margin-bottom:14px}
+.item-tag{font-size:12px;color:#5a6a80;font-weight:900;min-width:46px}
+.item-name{min-width:0;flex:1;height:48px;border:2px solid #cbd5e2;border-radius:9px;padding:7px 10px;font-size:17px;font-weight:850;background:#fff;color:#101f32}
+.remove{font-size:23px;line-height:1;width:35px;height:44px;border:0;background:transparent;color:#7a899b;font-weight:800;border-radius:8px}
+.remove:hover{background:#ffeaeb;color:#a92230}
+.counter{display:grid;grid-template-columns:minmax(65px,1fr) minmax(70px,1.15fr) minmax(65px,1fr);gap:10px;align-items:stretch}
+.count{display:grid;place-items:center;font-size:clamp(35px,4.2vw,57px);font-weight:950;line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.04em;min-width:0;overflow:hidden}
+.count.bump{animation:pulse .16s ease-out}@keyframes pulse{from{transform:scale(1.17)}to{transform:scale(1)}}
+.step{min-width:0;height:90px;border-radius:13px;font-size:47px;font-weight:800;line-height:1;color:#fff;border:0;box-shadow:inset 0 -4px 0 #0002;user-select:none;-webkit-user-select:none}
+.step.minus{background:#bd4a35}.step.plus{background:#167e43}.step:active{filter:brightness(.86);transform:scale(.98)}
+.step:disabled{background:#b9c3cd;box-shadow:none;cursor:not-allowed}
+ .price-line{display:flex;gap:12px;justify-content:space-between;align-items:center;margin:12px 0 14px;flex-wrap:wrap}
+.price-input-wrap{display:flex;align-items:center;gap:8px;min-width:0}.price-input-wrap label{font-size:14px;margin:0;white-space:nowrap}
+.price-input{width:114px;max-width:100%;height:44px;border:2px solid #cbd5e2;border-radius:10px;padding:6px 9px;text-align:right;font-weight:900;font-size:19px;font-variant-numeric:tabular-nums;color:#172a44;background:#fff}
+.price-input:focus{border-color:#366fd1;outline:2px solid #b1cdf7}
+.item-revenue{font-weight:950;font-size:19px;color:#10613a;font-variant-numeric:tabular-nums;white-space:nowrap}
+.item-revenue.unknown{color:#955522;font-size:15px}
+.stat-sales{background:#ebf6ee;border-color:#acd4b9}.stat-sales .stat-value{color:#10613a}
+.stat-warning{font-size:12px;font-weight:850;color:#9b4e11;margin-top:3px;min-height:15px}
+.foot-sales{font-size:17px;font-weight:950;color:#12633c;white-space:nowrap;font-variant-numeric:tabular-nums}
+.report-note{font-size:13px;color:#965318;font-weight:750;line-height:1.5}
+.report-table{font-size:15px}.report-table th,.report-table td{padding:10px 6px;text-align:right;white-space:nowrap}.report-table th:first-child,.report-table td:first-child{text-align:left;white-space:normal;overflow-wrap:anywhere}
+.report-table th:nth-child(2),.report-table td:nth-child(2){text-align:right}
+.item-foot{display:flex;justify-content:space-between;font-size:12px;color:#657489;font-weight:800;margin-top:9px}
+.help{font-size:14px;color:#596a7e;margin:12px 0 0;line-height:1.7}
+.actionbar{position:fixed;bottom:0;left:0;right:0;z-index:5;background:#fffffff5;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:2px solid #d7e0ec;padding:13px max(18px,env(safe-area-inset-right)) calc(13px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));box-shadow:0 -8px 26px #152a4724}
+.action-inner{max-width:1380px;margin:auto;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.total-mini{font-size:13px;font-weight:900;color:#5a6b7f;white-space:nowrap}.total-mini strong{font-size:23px;color:#10203b;margin-left:6px;font-variant-numeric:tabular-nums}
+.actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px}
+.btn-secondary{background:#fff;color:#1c3c63;border-color:#bdcee0}.btn-mail{background:#11663b;color:white}.btn-share{background:#245fa9;color:white}
+.tools-panel{margin:18px 0 6px}.tools-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.small-btn{min-height:42px;padding:8px 13px;font-size:14px;background:white;border:2px solid #ced9e5;border-radius:10px;color:#2c4059;font-weight:850}
+dialog{border:none;border-radius:18px;padding:0;width:min(620px,calc(100vw - 30px));max-height:min(86vh,820px);overflow:auto;box-shadow:0 25px 75px #13243b66;color:#10203b}
+dialog::backdrop{background:#0e1c30a8}.dialog-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid #dce5ee;background:#f9fbfe}.dialog-head h2{font-size:22px}
+.xbtn{border:0;background:#e9eef5;color:#233956;border-radius:12px;font-size:27px;font-weight:850;width:42px;height:42px;line-height:1}
+.dialog-body{padding:16px 22px 22px}.report-text{font-size:15px;line-height:1.6;color:#435671}.report-table{width:100%;border-collapse:collapse;font-size:17px;margin:14px 0 20px}.report-table th,.report-table td{border-bottom:1px solid #e1e7ef;padding:9px 8px;text-align:left}.report-table td:last-child,.report-table th:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:900}.report-total{font-size:20px;font-weight:950}
+.dialog-actions{display:flex;gap:10px;flex-wrap:wrap}
+.toast{position:fixed;bottom:128px;left:50%;transform:translateX(-50%);z-index:20;background:#172a44;color:white;padding:12px 20px;border-radius:12px;font-size:15px;font-weight:800;text-align:center;max-width:calc(100vw - 25px);box-shadow:0 9px 30px #0004;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}
+@media(max-width:1000px){.products{grid-template-columns:repeat(2,minmax(0,1fr))}.event-fields{grid-template-columns:1fr 1fr}.event-name-wrap{grid-column:1/-1}.step{height:100px}}
+@media(max-width:660px){.page{padding:15px 12px 184px}.top{align-items:flex-start}.brand-icon{display:none}h1{font-size:23px}.save-indicator{font-size:11px;padding:8px 10px}.event-fields{grid-template-columns:1fr 1fr;gap:10px}.event-fields .field{font-size:15px}.event-name-wrap{grid-column:1/-1}.stats{grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.stats .stat:nth-child(3){display:none}.stat{padding:10px;min-height:76px}.stat-value{font-size:29px}.stats .stat-sales .stat-value{font-size:27px}.price-line{gap:7px}.price-input{width:110px}.item-revenue{font-size:17px}.products{grid-template-columns:1fr;gap:12px}.item{padding:14px}.step{height:83px}.count{font-size:48px}.btn-add{min-width:0}.action-inner{display:block}.total-mini{display:none}.actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.actions .btn{padding:10px 6px;min-height:48px;font-size:14px}.actionbar{padding:10px 10px calc(10px + env(safe-area-inset-bottom))}.toast{bottom:160px}}
+@media(prefers-reduced-motion:reduce){.count.bump{animation:none}*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="top">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">＋</span><div><h1>屋外イベント 商品カウンター</h1><p class="sub">大きなボタンで販売数を記録 ／ 売上も自動集計 ／ 自動保存</p></div></div>
+    <span class="save-indicator" id="saveIndicator" role="status">● 保存済み</span>
+  </header>
+  <section class="panel event-fields" aria-label="イベント情報">
+    <div class="event-name-wrap"><label for="eventName">イベント名</label><input id="eventName" class="field" type="text" maxlength="100" placeholder="例：高槻イベント出店" autocomplete="off"></div>
+    <div><label for="eventDate">開催日</label><input id="eventDate" class="field" type="date"></div>
+    <div><label for="sendTo">送信先メール（任意）</label><input id="sendTo" class="field" type="email" placeholder="example@example.com" inputmode="email" autocomplete="email"></div>
+  </section>
+  <section class="stats" aria-label="集計情報">
+    <div class="stat stat-sales"><div class="stat-label">売上合計（税込）</div><div class="stat-value" id="totalRevenue">¥0</div><div class="stat-warning" id="priceWarning" aria-live="polite"></div></div>
+    <div class="stat"><div class="stat-label">合計販売数</div><div class="stat-value"><span id="totalCount">0</span> <span style="font-size:17px">個</span></div></div>
+    <div class="stat"><div class="stat-label">商品枠数</div><div class="stat-value"><span id="productCount">0</span> <span style="font-size:17px">品</span></div></div>
+  </section>
+  <div class="section-heading"><h2>商品ごとの販売数・売上</h2><button class="btn btn-add" id="addBtn" type="button">＋ 商品を追加</button></div>
+  <section class="products" id="products" aria-label="商品一覧"></section>
+  <p class="help">商品は何品でも追加できます。「－」で訂正でき、0未満にはなりません。商品名が空欄でもカウントできます。単価は税込価格で入力してください。<strong>未設定の商品が売れている場合、その金額は売上合計に含まれません。</strong> 単価を変更すると、すでにカウントした分も新しい単価で再計算します。</p>
+  <section class="panel tools-panel" aria-label="データ管理">
+    <div class="tools-row">
+      <button class="small-btn" id="undoBtn" type="button">↶ 直前のカウントを取り消す</button>
+      <button class="small-btn" id="resetCountsBtn" type="button">販売数・売上を0に戻す</button>
+      <button class="small-btn" id="newEventBtn" type="button">新しいイベントを開始</button>
+    </div>
+    <p class="help">ご注意：データは端末内に保存され、他のiPadと自動同期されません。イベント終了時にはメール送信かCSV保存で控えを残してください。</p>
+  </section>
+</main>
+<div class="actionbar"><div class="action-inner"><div class="total-mini">販売 <strong id="miniTotal">0</strong> 個　 <span class="foot-sales" id="miniRevenue">¥0</span></div><div class="actions"><button id="showReportBtn" class="btn btn-secondary" type="button">集計を見る</button><button id="csvBtn" class="btn btn-share" type="button">CSV共有・保存</button><button id="mailBtn" class="btn btn-mail" type="button">✉ メールで送る</button></div></div></div>
+<dialog id="reportDialog" aria-labelledby="reportTitle"><div class="dialog-head"><h2 id="reportTitle">販売数・売上の集計</h2><button type="button" class="xbtn" id="closeReportBtn" aria-label="閉じる">×</button></div><div class="dialog-body"><div id="reportSummary" class="report-text"></div><p id="reportWarning" class="report-note" hidden></p><table class="report-table"><thead><tr><th scope="col">商品名</th><th scope="col">単価（税込）</th><th scope="col">販売数</th><th scope="col">売上（税込）</th></tr></thead><tbody id="reportRows"></tbody><tfoot><tr class="report-total"><td>合計</td><td>—</td><td id="reportTotal">0</td><td id="reportRevenue">¥0</td></tr></tfoot></table><div class="dialog-actions"><button class="btn btn-mail" id="reportMailBtn" type="button">✉ メールで送る</button><button class="btn btn-share" id="reportCsvBtn" type="button">CSV共有・保存</button></div></div></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  'use strict';
+  // v1 の保存キーを維持し、旧バージョンの販売数・商品名・宛先を移行する。
+  const STORAGE_KEY='event_product_counter_v1';
+  const $=id=>document.getElementById(id);
+  const localDate=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+  const makeId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const blankItems=(n=6)=>Array.from({length:n},()=>({id:makeId(),name:'',price:null,count:0}));
+  const emptyData=()=>({version:2,eventName:'',eventDate:localDate(),sendTo:'',items:blankItems(),history:[],updatedAt:new Date().toISOString()});
+  const yen=n=>'¥'+n.toLocaleString('ja-JP');
+  const number=n=>n.toLocaleString('ja-JP');
+  const nameOf=(item,idx)=>item.name.trim()||`商品${idx+1}`;
+  const cleanPrice=value=>value===null||value===''||value===undefined?null:(Number.isSafeInteger(Number(value))&&Number(value)>=0&&Number(value)<=9999999?Number(value):null);
+  function readData(){
+    try{
+      const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return emptyData();
+      const old=JSON.parse(raw);if(!old||!Array.isArray(old.items))return emptyData();
+      const fresh=emptyData();
+      fresh.items=old.items.filter(x=>x&&typeof x.id==='string').map(x=>({id:x.id,name:String(x.name||'').slice(0,120),price:cleanPrice(x.price),count:Math.max(0,Math.floor(Number(x.count)||0))}));
+      if(!fresh.items.length)fresh.items=blankItems(1);
+      fresh.eventName=String(old.eventName||'');fresh.eventDate=String(old.eventDate||localDate());fresh.sendTo=String(old.sendTo||'');
+      fresh.history=Array.isArray(old.history)?old.history.filter(x=>x&&typeof x.id==='string'&&(x.delta===1||x.delta===-1)).slice(-150):[];
+      return fresh;
+    }catch(e){return emptyData();}
+  }
+  let data=readData(), currentToastTimer;
+  const total=()=>data.items.reduce((sum,item)=>sum+item.count,0);
+  const lineAmount=item=>item.price===null?null:item.count*item.price;
+  const revenue=()=>data.items.reduce((sum,item)=>sum+(lineAmount(item)??0),0);
+  const missingCount=()=>data.items.filter(item=>item.count>0&&item.price===null).length;
+  function save(){
+    data.updatedAt=new Date().toISOString();
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));$('saveIndicator').textContent='● 保存済み';$('saveIndicator').style.color='#24573f';}
+    catch(e){$('saveIndicator').textContent='！保存できません';$('saveIndicator').style.color='#a52626';toast('保存できません。CSVで控えを残してください。');}
+  }
+  function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(currentToastTimer);currentToastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
+  function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function renderItems(){
+    $('products').innerHTML=data.items.map((item,i)=>`<article class="item ${item.count>0?'active':''}" data-id="${escapeHtml(item.id)}">
+      <div class="item-head"><span class="item-tag">No.${i+1}</span><input class="item-name" aria-label="商品${i+1}の名前" placeholder="商品名を入力" type="text" maxlength="120" autocomplete="off" data-field="name" value="${escapeHtml(item.name)}"><button class="remove" type="button" data-action="remove" aria-label="商品${i+1}を削除" title="この商品を削除">×</button></div>
+      <div class="price-line"><div class="price-input-wrap"><label for="price-${i}">税込単価</label><input id="price-${i}" class="price-input" aria-label="商品${i+1}の税込単価（円）" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999999" step="1" placeholder="未設定" data-field="price" value="${item.price===null?'':item.price}"><span>円</span></div><output class="item-revenue ${item.price===null&&item.count>0?'unknown':''}" aria-label="この商品の売上">${amountLabel(item)}</output></div>
+      <div class="counter"><button class="step minus" type="button" data-action="minus" aria-label="商品${i+1}を1個減らす" ${item.count===0?'disabled':''}>−</button><output class="count" aria-label="販売数" aria-live="polite">${number(item.count)}</output><button class="step plus" type="button" data-action="plus" aria-label="商品${i+1}を1個増やす">＋</button></div>
+      <div class="item-foot"><span>－ 訂正</span><span>＋ 販売時にタップ</span></div></article>`).join('');
+    refreshStats();
+  }
+  const amountLabel=item=>item.price===null?(item.count>0?'売上：単価未設定':'売上：—'):'売上：'+yen(lineAmount(item));
+  function refreshStats(){
+    $('totalCount').textContent=number(total());$('miniTotal').textContent=number(total());
+    $('totalRevenue').textContent=yen(revenue());$('miniRevenue').textContent=yen(revenue());
+    $('productCount').textContent=number(data.items.length);
+    const missing=missingCount();$('priceWarning').textContent=missing?`※単価未設定の販売商品 ${missing}品を除く`:'';
+    $('undoBtn').disabled=!data.history.length;
+  }
+  function refreshCard(card,item){
+    if(!card)return;
+    const out=card.querySelector('.count');out.textContent=number(item.count);out.classList.remove('bump');void out.offsetWidth;out.classList.add('bump');
+    card.querySelector('.minus').disabled=item.count===0;card.classList.toggle('active',item.count>0);
+    const amount=card.querySelector('.item-revenue');amount.textContent=amountLabel(item);amount.classList.toggle('unknown',item.price===null&&item.count>0);
+  }
+  function updateCount(id,delta){
+    const item=data.items.find(x=>x.id===id);if(!item)return;
+    const old=item.count;item.count=Math.max(0,item.count+delta);if(old===item.count)return;
+    data.history.push({id:item.id,delta,at:new Date().toISOString()});if(data.history.length>150)data.history=data.history.slice(-150);
+    refreshCard(Array.from($('products').children).find(x=>x.dataset.id===id),item);
+    refreshStats();save();
+  }
+  $('products').addEventListener('click',ev=>{
+    const btn=ev.target.closest('button[data-action]');if(!btn)return;
+    const card=btn.closest('[data-id]');if(!card)return;
+    const id=card.dataset.id, action=btn.dataset.action;
+    if(action==='plus')updateCount(id,1);
+    if(action==='minus')updateCount(id,-1);
+    if(action==='remove'){
+      const i=data.items.findIndex(x=>x.id===id);if(i<0)return;
+      if(data.items[i].count>0&&!confirm(`「${nameOf(data.items[i],i)}」には${data.items[i].count}個の販売記録があります。削除すると売上も消えます。削除してよろしいですか？`))return;
+      data.items.splice(i,1);data.history=data.history.filter(x=>x.id!==id);
+      if(!data.items.length)data.items.push({id:makeId(),name:'',price:null,count:0});
+      renderItems();save();toast('商品を削除しました');
+    }
+  });
+  $('products').addEventListener('input',ev=>{
+    const target=ev.target;if(!target.matches('input[data-field]'))return;
+    const id=target.closest('[data-id]')?.dataset.id;
+    const item=data.items.find(x=>x.id===id);if(!item)return;
+    if(target.dataset.field==='name'){item.name=target.value;save();return;}
+    if(target.dataset.field==='price'){
+      if(target.value!==''&&!/^\d{1,7}$/.test(target.value))return;
+      item.price=cleanPrice(target.value);
+      refreshCardAmount(target.closest('.item'),item);refreshStats();save();
+    }
+  });
+  $('products').addEventListener('change',ev=>{
+    const target=ev.target;if(!target.matches('input[data-field="price"]'))return;
+    const item=data.items.find(x=>x.id===target.closest('[data-id]')?.dataset.id);if(!item)return;
+    target.value=item.price===null?'':String(item.price);
+    if(item.count>0)toast('単価を変更すると、販売済みの分も再計算されます');
+  });
+  function refreshCardAmount(card,item){
+    if(!card)return;const amount=card.querySelector('.item-revenue');
+    amount.textContent=amountLabel(item);amount.classList.toggle('unknown',item.price===null&&item.count>0);
+  }
+  $('addBtn').addEventListener('click',()=>{
+    const item={id:makeId(),name:'',price:null,count:0};data.items.push(item);renderItems();save();
+    const added=Array.from($('products').children).find(x=>x.dataset.id===item.id);
+    if(added){added.scrollIntoView({behavior:'smooth',block:'center'});added.querySelector('.item-name').focus({preventScroll:true});}
+  });
+  [['eventName','eventName'],['eventDate','eventDate'],['sendTo','sendTo']].forEach(([id,key])=>{
+    $(id).value=data[key];$(id).addEventListener('input',ev=>{data[key]=ev.target.value;save();});
+  });
+  $('undoBtn').addEventListener('click',()=>{
+    while(data.history.length){const entry=data.history.pop();const item=data.items.find(x=>x.id===entry.id);if(!item)continue;
+      item.count=Math.max(0,item.count-entry.delta);renderItems();save();toast('直前のカウントを取り消しました');return;
+    }
+    refreshStats();
+  });
+  $('resetCountsBtn').addEventListener('click',()=>{
+    if(!confirm('すべての商品の販売数と売上を0にします。商品名と単価は残ります。\n集計の保存・メール送信は済んでいますか？'))return;
+    data.items.forEach(x=>x.count=0);data.history=[];renderItems();save();toast('販売数と売上を0に戻しました');
+  });
+  $('newEventBtn').addEventListener('click',()=>{
+    if(!confirm('商品名・単価・販売数・イベント名をすべて初期化します。\n現在の集計をメール送信またはCSV保存しましたか？'))return;
+    const savedEmail=data.sendTo;data=emptyData();data.sendTo=savedEmail;
+    $('eventName').value='';$('eventDate').value=data.eventDate;$('sendTo').value=data.sendTo;
+    renderItems();save();toast('新しいイベントを開始しました');
+  });
+  const reportItems=()=>data.items.map((item,i)=>({name:nameOf(item,i),count:item.count,price:item.price,amount:lineAmount(item),originalName:item.name})).filter(x=>x.originalName.trim()||x.count!==0||x.price!==null);
+  function showReport(){
+    $('reportSummary').textContent=`イベント：${data.eventName.trim()||'（イベント名未入力）'}　／　開催日：${data.eventDate||'未設定'}`;
+    const missing=missingCount();$('reportWarning').hidden=!missing;
+    $('reportWarning').textContent=missing?`単価未設定の商品 ${missing}品に販売記録があります。該当商品の金額は合計に含まれていません。`:'';
+    const tbody=$('reportRows');tbody.replaceChildren();const items=reportItems();
+    if(!items.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=4;td.textContent='まだ商品・販売数が入力されていません。';tr.append(td);tbody.append(tr);}
+    for(const item of items){
+      const tr=document.createElement('tr');for(const txt of [item.name,item.price===null?'未設定':yen(item.price),number(item.count)+' 個',item.amount===null?'未設定':yen(item.amount)]){
+        const td=document.createElement('td');td.textContent=txt;tr.append(td);
+      }tbody.append(tr);
+    }
+    $('reportTotal').textContent=number(total())+' 個';$('reportRevenue').textContent=yen(revenue());$('reportDialog').showModal();
+  }
+  $('showReportBtn').addEventListener('click',showReport);
+  $('closeReportBtn').addEventListener('click',()=>$('reportDialog').close());
+  $('reportDialog').addEventListener('click',ev=>{if(ev.target===$('reportDialog'))$('reportDialog').close();});
+  function reportText(){
+    const lines=['【屋外イベント 販売数・売上報告】',`イベント名：${data.eventName.trim()||'（未入力）'}`,`開催日：${data.eventDate||'（未設定）'}`,`出力日時：${new Date().toLocaleString('ja-JP')}`,'','【商品別内訳】'];
+    const items=reportItems();if(!items.length)lines.push('（商品データなし）');
+    for(const item of items){lines.push(`${item.name}：${item.price===null?'単価未設定':yen(item.price)} × ${number(item.count)}個 = ${item.amount===null?'売上未計算':yen(item.amount)}`);}
+    lines.push('────────────────',`販売数合計：${number(total())} 個`,`売上合計（税込）：${yen(revenue())}`);
+    if(missingCount())lines.push(`※単価未設定で販売済みの商品が${missingCount()}品あり、その金額は合計に含まれません。`);
+    lines.push('','※同一商品の販売金額は、現在登録されている税込単価×販売数で計算。','※商品カウンターから作成したメールです（未送信）。');
+    return lines.join('\n');
+  }
+  function mailReport(){
+    const recipient=(data.sendTo||'').trim();
+    if(recipient&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)){toast('送信先メールアドレスを確認してください');$('sendTo').focus();return;}
+    const subject=`販売数・売上報告｜${data.eventName.trim()||'屋外イベント'}｜${data.eventDate||localDate()}`;
+    const url=`mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(reportText())}`;
+    if(url.length>9000){toast('データ量が多いためCSV共有・保存をご利用ください');return;}
+    // 自動送信ではなくメールアプリの下書きを開く。
+    window.location.href=url;
+  }
+  $('mailBtn').addEventListener('click',mailReport);
+  $('reportMailBtn').addEventListener('click',mailReport);
+  function csvCell(value){
+    let s=String(value??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;
+    return '"'+s.replace(/"/g,'""')+'"';
+  }
+  function csvContent(){
+    const rows=[['屋外イベント 商品別販売数・売上'],['イベント名',data.eventName],['開催日',data.eventDate],['出力日時',new Date().toLocaleString('ja-JP')],[],['商品名','税込単価(円)','販売数(個)','売上(税込・円)']];
+    reportItems().forEach(item=>rows.push([item.name,item.price===null?'未設定':item.price,item.count,item.amount===null?'未設定':item.amount]));
+    rows.push(['合計','',total(),revenue()]);
+    if(missingCount())rows.push(['注意',`税込単価未設定で販売済みの商品${missingCount()}品は売上合計に含まず`]);
+    rows.push(['計算方法','現在登録されている税込単価×販売数で計算']);
+    return '\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n')+'\r\n';
+  }
+  function cleanFilename(s){return (s||'イベント').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,40)||'イベント';}
+  async function shareCsv(){
+    const fileName=`販売売上_${cleanFilename(data.eventDate)}_${cleanFilename(data.eventName)}.csv`;
+    const contents=csvContent();const blob=new Blob([contents],{type:'text/csv;charset=utf-8'});
+    const file=new File([blob],fileName,{type:'text/csv'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({title:'イベント販売数・売上',files:[file]});return;}
+      catch(err){if(err&&err.name==='AbortError')return;}
+    }
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fileName;document.body.append(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),30000);toast('CSVファイルを保存しました');
+  }
+  $('csvBtn').addEventListener('click',shareCsv);
+  $('reportCsvBtn').addEventListener('click',shareCsv);
+  renderItems();save();
+  if('serviceWorker' in navigator&&location.protocol==='https:'){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  }
+})();
+</script>
+</body>
+</html>

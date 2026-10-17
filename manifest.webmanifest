@@ -1,0 +1,15 @@
+{
+  "name": "屋外イベント 商品カウンター",
+  "short_name": "販売カウンター",
+  "description": "イベントの販売数と売上高を商品ごとに集計し、メール・CSVで共有",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6fa",
+  "theme_color": "#10203b",
+  "icons": [
+    {"src":"./icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"./icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
