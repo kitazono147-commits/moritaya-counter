@@ -10,7 +10,7 @@
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<title>屋外イベント 販売数・売上カウンター</title>
+<title>屋外イベント 販売数・売上カウンター v2.1</title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#10203b;background:#f3f6fa;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0;min-width:320px;-webkit-font-smoothing:antialiased}
@@ -69,7 +69,7 @@ h2{margin:0;font-size:22px;letter-spacing:.02em}
 .actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px}
 .btn-secondary{background:#fff;color:#1c3c63;border-color:#bdcee0}.btn-mail{background:#11663b;color:white}.btn-share{background:#245fa9;color:white}
 .tools-panel{margin:18px 0 6px}.tools-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.small-btn{min-height:42px;padding:8px 13px;font-size:14px;background:white;border:2px solid #ced9e5;border-radius:10px;color:#2c4059;font-weight:850}
-dialog{border:none;border-radius:18px;padding:0;width:min(620px,calc(100vw - 30px));max-height:min(86vh,820px);overflow:auto;box-shadow:0 25px 75px #13243b66;color:#10203b}
+dialog:not([open]){display:none}dialog[open]{display:block}dialog{border:none;border-radius:18px;padding:0;width:min(620px,calc(100vw - 30px));max-height:min(86vh,820px);overflow:auto;box-shadow:0 25px 75px #13243b66;color:#10203b}
 dialog::backdrop{background:#0e1c30a8}.dialog-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid #dce5ee;background:#f9fbfe}.dialog-head h2{font-size:22px}
 .xbtn{border:0;background:#e9eef5;color:#233956;border-radius:12px;font-size:27px;font-weight:850;width:42px;height:42px;line-height:1}
 .dialog-body{padding:16px 22px 22px}.report-text{font-size:15px;line-height:1.6;color:#435671}.report-table{width:100%;border-collapse:collapse;font-size:17px;margin:14px 0 20px}.report-table th,.report-table td{border-bottom:1px solid #e1e7ef;padding:9px 8px;text-align:left}.report-table td:last-child,.report-table th:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:900}.report-total{font-size:20px;font-weight:950}
@@ -84,7 +84,7 @@ dialog::backdrop{background:#0e1c30a8}.dialog-head{display:flex;align-items:cent
 <main class="page">
   <header class="top">
     <div class="brand"><span class="brand-icon" aria-hidden="true">＋</span><div><h1>屋外イベント 商品カウンター</h1><p class="sub">大きなボタンで販売数を記録 ／ 売上も自動集計 ／ 自動保存</p></div></div>
-    <span class="save-indicator" id="saveIndicator" role="status">● 保存済み</span>
+    <span class="save-indicator" id="saveIndicator" role="status">起動中…</span>
   </header>
   <section class="panel event-fields" aria-label="イベント情報">
     <div class="event-name-wrap"><label for="eventName">イベント名</label><input id="eventName" class="field" type="text" maxlength="100" placeholder="例：高槻イベント出店" autocomplete="off"></div>
@@ -97,7 +97,8 @@ dialog::backdrop{background:#0e1c30a8}.dialog-head{display:flex;align-items:cent
     <div class="stat"><div class="stat-label">商品枠数</div><div class="stat-value"><span id="productCount">0</span> <span style="font-size:17px">品</span></div></div>
   </section>
   <div class="section-heading"><h2>商品ごとの販売数・売上</h2><button class="btn btn-add" id="addBtn" type="button">＋ 商品を追加</button></div>
-  <section class="products" id="products" aria-label="商品一覧"></section>
+  <div id="startupNotice" role="status" aria-live="polite" style="background:#fff2d9;border:2px solid #efc46a;border-radius:12px;padding:12px 14px;margin:10px 0;font-weight:800;color:#715114">商品一覧を読み込んでいます。数秒経っても消えない場合は、互換性エラーの可能性があります。画面を撮影してお知らせください。</div>
+  <section class="products" id="products" aria-label="商品一覧"></section><noscript><p style="padding:16px;background:#fff0d0;color:#784b00;font-weight:bold">JavaScriptが無効です。ブラウザの設定でJavaScriptを有効にしてください。</p></noscript>
   <p class="help">商品は何品でも追加できます。「－」で訂正でき、0未満にはなりません。商品名が空欄でもカウントできます。単価は税込価格で入力してください。<strong>未設定の商品が売れている場合、その金額は売上合計に含まれません。</strong> 単価を変更すると、すでにカウントした分も新しい単価で再計算します。</p>
   <section class="panel tools-panel" aria-label="データ管理">
     <div class="tools-row">
@@ -112,199 +113,341 @@ dialog::backdrop{background:#0e1c30a8}.dialog-head{display:flex;align-items:cent
 <dialog id="reportDialog" aria-labelledby="reportTitle"><div class="dialog-head"><h2 id="reportTitle">販売数・売上の集計</h2><button type="button" class="xbtn" id="closeReportBtn" aria-label="閉じる">×</button></div><div class="dialog-body"><div id="reportSummary" class="report-text"></div><p id="reportWarning" class="report-note" hidden></p><table class="report-table"><thead><tr><th scope="col">商品名</th><th scope="col">単価（税込）</th><th scope="col">販売数</th><th scope="col">売上（税込）</th></tr></thead><tbody id="reportRows"></tbody><tfoot><tr class="report-total"><td>合計</td><td>—</td><td id="reportTotal">0</td><td id="reportRevenue">¥0</td></tr></tfoot></table><div class="dialog-actions"><button class="btn btn-mail" id="reportMailBtn" type="button">✉ メールで送る</button><button class="btn btn-share" id="reportCsvBtn" type="button">CSV共有・保存</button></div></div></dialog>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>
-(() => {
+// If an old/incompatible browser cannot start the main script, explain that instead of silently showing an empty list.
+window.addEventListener('error', function(event) {
+  var el = document.getElementById('startupNotice');
+  if (!el || el.hidden) return;
+  var info = event && event.message ? String(event.message).slice(0,110) : 'スクリプトが起動できませんでした';
+  el.textContent = '商品一覧を表示できません。Operaのページを再読み込みしてください。改善しない場合はこの画面を撮影してお知らせください。 詳細: ' + info;
+});
+</script>
+<script>
+(function () {
   'use strict';
-  // v1 の保存キーを維持し、旧バージョンの販売数・商品名・宛先を移行する。
-  const STORAGE_KEY='event_product_counter_v1';
-  const $=id=>document.getElementById(id);
-  const localDate=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
-  const makeId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`id-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const blankItems=(n=6)=>Array.from({length:n},()=>({id:makeId(),name:'',price:null,count:0}));
-  const emptyData=()=>({version:2,eventName:'',eventDate:localDate(),sendTo:'',items:blankItems(),history:[],updatedAt:new Date().toISOString()});
-  const yen=n=>'¥'+n.toLocaleString('ja-JP');
-  const number=n=>n.toLocaleString('ja-JP');
-  const nameOf=(item,idx)=>item.name.trim()||`商品${idx+1}`;
-  const cleanPrice=value=>value===null||value===''||value===undefined?null:(Number.isSafeInteger(Number(value))&&Number(value)>=0&&Number(value)<=9999999?Number(value):null);
-  function readData(){
-    try{
-      const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return emptyData();
-      const old=JSON.parse(raw);if(!old||!Array.isArray(old.items))return emptyData();
-      const fresh=emptyData();
-      fresh.items=old.items.filter(x=>x&&typeof x.id==='string').map(x=>({id:x.id,name:String(x.name||'').slice(0,120),price:cleanPrice(x.price),count:Math.max(0,Math.floor(Number(x.count)||0))}));
-      if(!fresh.items.length)fresh.items=blankItems(1);
-      fresh.eventName=String(old.eventName||'');fresh.eventDate=String(old.eventDate||localDate());fresh.sendTo=String(old.sendTo||'');
-      fresh.history=Array.isArray(old.history)?old.history.filter(x=>x&&typeof x.id==='string'&&(x.delta===1||x.delta===-1)).slice(-150):[];
-      return fresh;
-    }catch(e){return emptyData();}
+  var STORAGE_KEY = 'event_product_counter_v1';
+  var currentToastTimer = null;
+  var sequence = 0;
+  function byId(id) { return document.getElementById(id); }
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   }
-  let data=readData(), currentToastTimer;
-  const total=()=>data.items.reduce((sum,item)=>sum+item.count,0);
-  const lineAmount=item=>item.price===null?null:item.count*item.price;
-  const revenue=()=>data.items.reduce((sum,item)=>sum+(lineAmount(item)??0),0);
-  const missingCount=()=>data.items.filter(item=>item.count>0&&item.price===null).length;
-  function save(){
-    data.updatedAt=new Date().toISOString();
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));$('saveIndicator').textContent='● 保存済み';$('saveIndicator').style.color='#24573f';}
-    catch(e){$('saveIndicator').textContent='！保存できません';$('saveIndicator').style.color='#a52626';toast('保存できません。CSVで控えを残してください。');}
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function makeId() { sequence++; return 'item-' + new Date().getTime() + '-' + sequence + '-' + Math.floor(Math.random() * 10000000); }
+  function blankItems(n) {
+    var result = [], i;
+    for (i = 0; i < n; i++) result.push({id: makeId(), name: '', price: null, count: 0});
+    return result;
   }
-  function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(currentToastTimer);currentToastTimer=setTimeout(()=>el.classList.remove('show'),2800);}
-  function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function renderItems(){
-    $('products').innerHTML=data.items.map((item,i)=>`<article class="item ${item.count>0?'active':''}" data-id="${escapeHtml(item.id)}">
-      <div class="item-head"><span class="item-tag">No.${i+1}</span><input class="item-name" aria-label="商品${i+1}の名前" placeholder="商品名を入力" type="text" maxlength="120" autocomplete="off" data-field="name" value="${escapeHtml(item.name)}"><button class="remove" type="button" data-action="remove" aria-label="商品${i+1}を削除" title="この商品を削除">×</button></div>
-      <div class="price-line"><div class="price-input-wrap"><label for="price-${i}">税込単価</label><input id="price-${i}" class="price-input" aria-label="商品${i+1}の税込単価（円）" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="9999999" step="1" placeholder="未設定" data-field="price" value="${item.price===null?'':item.price}"><span>円</span></div><output class="item-revenue ${item.price===null&&item.count>0?'unknown':''}" aria-label="この商品の売上">${amountLabel(item)}</output></div>
-      <div class="counter"><button class="step minus" type="button" data-action="minus" aria-label="商品${i+1}を1個減らす" ${item.count===0?'disabled':''}>−</button><output class="count" aria-label="販売数" aria-live="polite">${number(item.count)}</output><button class="step plus" type="button" data-action="plus" aria-label="商品${i+1}を1個増やす">＋</button></div>
-      <div class="item-foot"><span>－ 訂正</span><span>＋ 販売時にタップ</span></div></article>`).join('');
+  function emptyData() {
+    return {version: 4, eventName: '', eventDate: today(), sendTo: '', items: blankItems(6), history: [], updatedAt: new Date().toISOString()};
+  }
+  function cleanPrice(value) {
+    if (value === null || value === '' || typeof value === 'undefined') return null;
+    var n = Number(value);
+    if (!isFinite(n) || Math.floor(n) !== n || n < 0 || n > 9999999) return null;
+    return n;
+  }
+  function loadData() {
+    var raw, old, obj, i, entry, count;
+    try {
+      raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return emptyData();
+      old = JSON.parse(raw);
+      if (!old || !old.items || Object.prototype.toString.call(old.items) !== '[object Array]') return emptyData();
+      obj = emptyData();
+      obj.items = [];
+      for (i = 0; i < old.items.length; i++) {
+        entry = old.items[i];
+        if (!entry || typeof entry.id !== 'string') continue;
+        count = Math.floor(Number(entry.count) || 0);
+        obj.items.push({id: entry.id, name: String(entry.name || '').slice(0, 120), price: cleanPrice(entry.price), count: Math.max(0, count)});
+      }
+      if (!obj.items.length) obj.items = blankItems(6);
+      obj.eventName = String(old.eventName || '');
+      obj.eventDate = String(old.eventDate || today());
+      obj.sendTo = String(old.sendTo || '');
+      obj.history = [];
+      if (old.history && old.history.length) {
+        for (i = Math.max(0, old.history.length - 150); i < old.history.length; i++) {
+          entry = old.history[i];
+          if (entry && typeof entry.id === 'string' && (entry.delta === 1 || entry.delta === -1)) obj.history.push(entry);
+        }
+      }
+      return obj;
+    } catch (ex) { return emptyData(); }
+  }
+  var data = loadData();
+  function yen(n) { return '¥' + commas(n); }
+  function commas(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function nameOf(item, i) { return String(item.name || '').replace(/^\s+|\s+$/g, '') || '商品' + (i + 1); }
+  function amount(item) { return item.price === null ? null : item.count * item.price; }
+  function amountLabel(item) { return item.price === null ? (item.count > 0 ? '売上：単価未設定' : '売上：—') : '売上：' + yen(amount(item)); }
+  function totalCount() { var n = 0, i; for (i = 0; i < data.items.length; i++) n += data.items[i].count; return n; }
+  function totalRevenue() { var n = 0, i; for (i = 0; i < data.items.length; i++) if (data.items[i].price !== null) n += amount(data.items[i]); return n; }
+  function missingCount() { var n = 0, i; for (i = 0; i < data.items.length; i++) if (data.items[i].count > 0 && data.items[i].price === null) n++; return n; }
+  function toast(msg) {
+    var el = byId('toast');
+    el.textContent = msg;
+    el.className = 'toast show';
+    clearTimeout(currentToastTimer);
+    currentToastTimer = setTimeout(function () { el.className = 'toast'; }, 2800);
+  }
+  function save() {
+    data.updatedAt = new Date().toISOString();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      byId('saveIndicator').textContent = '● 保存済み';
+      byId('saveIndicator').style.color = '#24573f';
+    } catch (ex) {
+      byId('saveIndicator').textContent = '！保存できません';
+      byId('saveIndicator').style.color = '#a52626';
+      toast('保存できません。イベント終了時はメールで記録を残してください。');
+    }
+  }
+  function esc(value) {
+    return String(value).replace(/[&<>"']/g, function (c) {
+      return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
+  }
+  function hasClass(el, cls) { return (' ' + (el.className || '') + ' ').indexOf(' ' + cls + ' ') >= 0; }
+  function setClass(el, cls, flag) {
+    if (!el) return;
+    var current = ' ' + (el.className || '').replace(/\s+/g, ' ') + ' ';
+    current = current.replace(' ' + cls + ' ', ' ');
+    if (flag) current += cls + ' ';
+    el.className = current.replace(/^\s+|\s+$/g, '');
+  }
+  function ancestor(el, className) {
+    while (el && el !== document.body) {
+      if (el.nodeType === 1 && hasClass(el, className)) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+  function getItem(id) { var i; for (i = 0; i < data.items.length; i++) if (data.items[i].id === id) return data.items[i]; return null; }
+  function getCard(id) {
+    var cards = byId('products').children, i;
+    for (i = 0; i < cards.length; i++) if (cards[i].getAttribute('data-id') === id) return cards[i];
+    return null;
+  }
+  function renderItems() {
+    var html = [], i, item;
+    for (i = 0; i < data.items.length; i++) {
+      item = data.items[i];
+      html.push('<article class="item' + (item.count > 0 ? ' active' : '') + '" data-id="' + esc(item.id) + '">' +
+        '<div class="item-head"><span class="item-tag">No.' + (i + 1) + '</span>' +
+        '<input class="item-name" aria-label="商品' + (i + 1) + 'の名前" placeholder="商品名を入力" type="text" maxlength="120" autocomplete="off" data-field="name" value="' + esc(item.name) + '">' +
+        '<button class="remove" type="button" data-action="remove" aria-label="商品' + (i + 1) + 'を削除" title="この商品を削除">×</button></div>' +
+        '<div class="price-line"><div class="price-input-wrap"><label for="price-' + i + '">税込単価</label>' +
+        '<input id="price-' + i + '" class="price-input" aria-label="商品' + (i + 1) + 'の税込単価（円）" type="number" inputmode="numeric" min="0" max="9999999" step="1" placeholder="未設定" data-field="price" value="' + (item.price === null ? '' : item.price) + '"><span>円</span></div>' +
+        '<output class="item-revenue' + (item.price === null && item.count > 0 ? ' unknown' : '') + '" aria-label="この商品の売上">' + esc(amountLabel(item)) + '</output></div>' +
+        '<div class="counter"><button class="step minus" type="button" data-action="minus" aria-label="商品' + (i + 1) + 'を1個減らす"' + (item.count === 0 ? ' disabled' : '') + '>−</button>' +
+        '<output class="count" aria-label="販売数" aria-live="polite">' + commas(item.count) + '</output>' +
+        '<button class="step plus" type="button" data-action="plus" aria-label="商品' + (i + 1) + 'を1個増やす">＋</button></div>' +
+        '<div class="item-foot"><span>－ 訂正</span><span>＋ 販売時にタップ</span></div></article>');
+    }
+    byId('products').innerHTML = html.join('');
     refreshStats();
   }
-  const amountLabel=item=>item.price===null?(item.count>0?'売上：単価未設定':'売上：—'):'売上：'+yen(lineAmount(item));
-  function refreshStats(){
-    $('totalCount').textContent=number(total());$('miniTotal').textContent=number(total());
-    $('totalRevenue').textContent=yen(revenue());$('miniRevenue').textContent=yen(revenue());
-    $('productCount').textContent=number(data.items.length);
-    const missing=missingCount();$('priceWarning').textContent=missing?`※単価未設定の販売商品 ${missing}品を除く`:'';
-    $('undoBtn').disabled=!data.history.length;
+  function refreshStats() {
+    byId('totalCount').textContent = commas(totalCount());
+    byId('miniTotal').textContent = commas(totalCount());
+    byId('totalRevenue').textContent = yen(totalRevenue());
+    byId('miniRevenue').textContent = yen(totalRevenue());
+    byId('productCount').textContent = commas(data.items.length);
+    byId('priceWarning').textContent = missingCount() ? '※単価未設定の商品 ' + missingCount() + '品の売上は除外' : '';
+    byId('undoBtn').disabled = data.history.length === 0;
   }
-  function refreshCard(card,item){
-    if(!card)return;
-    const out=card.querySelector('.count');out.textContent=number(item.count);out.classList.remove('bump');void out.offsetWidth;out.classList.add('bump');
-    card.querySelector('.minus').disabled=item.count===0;card.classList.toggle('active',item.count>0);
-    const amount=card.querySelector('.item-revenue');amount.textContent=amountLabel(item);amount.classList.toggle('unknown',item.price===null&&item.count>0);
+  function refreshCard(item) {
+    var card = getCard(item.id);
+    if (!card) return;
+    card.querySelector('.count').textContent = commas(item.count);
+    card.querySelector('.minus').disabled = item.count === 0;
+    setClass(card, 'active', item.count > 0);
+    var output = card.querySelector('.item-revenue');
+    output.textContent = amountLabel(item);
+    setClass(output, 'unknown', item.price === null && item.count > 0);
   }
-  function updateCount(id,delta){
-    const item=data.items.find(x=>x.id===id);if(!item)return;
-    const old=item.count;item.count=Math.max(0,item.count+delta);if(old===item.count)return;
-    data.history.push({id:item.id,delta,at:new Date().toISOString()});if(data.history.length>150)data.history=data.history.slice(-150);
-    refreshCard(Array.from($('products').children).find(x=>x.dataset.id===id),item);
-    refreshStats();save();
+  function count(id, delta) {
+    var item = getItem(id), old;
+    if (!item) return;
+    old = item.count;
+    item.count = Math.max(0, old + delta);
+    if (old === item.count) return;
+    data.history.push({id: id, delta: delta, at: new Date().toISOString()});
+    if (data.history.length > 150) data.history = data.history.slice(-150);
+    refreshCard(item); refreshStats(); save();
   }
-  $('products').addEventListener('click',ev=>{
-    const btn=ev.target.closest('button[data-action]');if(!btn)return;
-    const card=btn.closest('[data-id]');if(!card)return;
-    const id=card.dataset.id, action=btn.dataset.action;
-    if(action==='plus')updateCount(id,1);
-    if(action==='minus')updateCount(id,-1);
-    if(action==='remove'){
-      const i=data.items.findIndex(x=>x.id===id);if(i<0)return;
-      if(data.items[i].count>0&&!confirm(`「${nameOf(data.items[i],i)}」には${data.items[i].count}個の販売記録があります。削除すると売上も消えます。削除してよろしいですか？`))return;
-      data.items.splice(i,1);data.history=data.history.filter(x=>x.id!==id);
-      if(!data.items.length)data.items.push({id:makeId(),name:'',price:null,count:0});
-      renderItems();save();toast('商品を削除しました');
+  byId('products').addEventListener('click', function (ev) {
+    var el = ev.target, card, action, id, i;
+    while (el && el !== byId('products') && !(el.nodeName === 'BUTTON' && el.getAttribute('data-action'))) el = el.parentNode;
+    if (!el || el === byId('products')) return;
+    card = ancestor(el, 'item'); if (!card) return;
+    action = el.getAttribute('data-action'); id = card.getAttribute('data-id');
+    if (action === 'plus') count(id, 1);
+    if (action === 'minus') count(id, -1);
+    if (action === 'remove') {
+      for (i = 0; i < data.items.length; i++) if (data.items[i].id === id) break;
+      if (i === data.items.length) return;
+      if (data.items[i].count > 0 && !window.confirm('「' + nameOf(data.items[i], i) + '」には販売記録があります。削除すると売上も消えます。よろしいですか？')) return;
+      data.items.splice(i, 1);
+      data.history = data.history.filter(function (entry) { return entry.id !== id; });
+      if (data.items.length === 0) data.items = blankItems(1);
+      renderItems(); save(); toast('商品を削除しました');
     }
-  });
-  $('products').addEventListener('input',ev=>{
-    const target=ev.target;if(!target.matches('input[data-field]'))return;
-    const id=target.closest('[data-id]')?.dataset.id;
-    const item=data.items.find(x=>x.id===id);if(!item)return;
-    if(target.dataset.field==='name'){item.name=target.value;save();return;}
-    if(target.dataset.field==='price'){
-      if(target.value!==''&&!/^\d{1,7}$/.test(target.value))return;
-      item.price=cleanPrice(target.value);
-      refreshCardAmount(target.closest('.item'),item);refreshStats();save();
+  }, false);
+  byId('products').addEventListener('input', function (ev) {
+    var t = ev.target, card, item;
+    if (!t || !t.getAttribute || !t.getAttribute('data-field')) return;
+    card = ancestor(t, 'item'); if (!card) return;
+    item = getItem(card.getAttribute('data-id')); if (!item) return;
+    if (t.getAttribute('data-field') === 'name') { item.name = t.value; save(); return; }
+    if (t.getAttribute('data-field') === 'price') {
+      if (t.value !== '' && !/^\d{1,7}$/.test(t.value)) return;
+      item.price = cleanPrice(t.value);
+      refreshCard(item); refreshStats(); save();
     }
-  });
-  $('products').addEventListener('change',ev=>{
-    const target=ev.target;if(!target.matches('input[data-field="price"]'))return;
-    const item=data.items.find(x=>x.id===target.closest('[data-id]')?.dataset.id);if(!item)return;
-    target.value=item.price===null?'':String(item.price);
-    if(item.count>0)toast('単価を変更すると、販売済みの分も再計算されます');
-  });
-  function refreshCardAmount(card,item){
-    if(!card)return;const amount=card.querySelector('.item-revenue');
-    amount.textContent=amountLabel(item);amount.classList.toggle('unknown',item.price===null&&item.count>0);
+  }, false);
+  byId('products').addEventListener('change', function (ev) {
+    var t = ev.target, card, item;
+    if (!t || !t.getAttribute || t.getAttribute('data-field') !== 'price') return;
+    card = ancestor(t, 'item'); if (!card) return;
+    item = getItem(card.getAttribute('data-id')); if (!item) return;
+    t.value = item.price === null ? '' : String(item.price);
+    if (item.count > 0) toast('単価を変更すると販売済みの分も再計算されます');
+  }, false);
+  byId('addBtn').addEventListener('click', function () {
+    var item = {id: makeId(), name: '', price: null, count: 0};
+    data.items.push(item); renderItems(); save();
+    var card = getCard(item.id);
+    if (card) {
+      try { card.scrollIntoView(false); card.querySelector('.item-name').focus(); } catch (ex) { }
+    }
+  }, false);
+  function bindInput(id, key) {
+    byId(id).value = data[key];
+    byId(id).addEventListener('input', function (ev) { data[key] = ev.target.value; save(); }, false);
+    byId(id).addEventListener('change', function (ev) { data[key] = ev.target.value; save(); }, false);
   }
-  $('addBtn').addEventListener('click',()=>{
-    const item={id:makeId(),name:'',price:null,count:0};data.items.push(item);renderItems();save();
-    const added=Array.from($('products').children).find(x=>x.dataset.id===item.id);
-    if(added){added.scrollIntoView({behavior:'smooth',block:'center'});added.querySelector('.item-name').focus({preventScroll:true});}
-  });
-  [['eventName','eventName'],['eventDate','eventDate'],['sendTo','sendTo']].forEach(([id,key])=>{
-    $(id).value=data[key];$(id).addEventListener('input',ev=>{data[key]=ev.target.value;save();});
-  });
-  $('undoBtn').addEventListener('click',()=>{
-    while(data.history.length){const entry=data.history.pop();const item=data.items.find(x=>x.id===entry.id);if(!item)continue;
-      item.count=Math.max(0,item.count-entry.delta);renderItems();save();toast('直前のカウントを取り消しました');return;
+  bindInput('eventName', 'eventName'); bindInput('eventDate', 'eventDate'); bindInput('sendTo', 'sendTo');
+  byId('undoBtn').addEventListener('click', function () {
+    var entry, item;
+    while (data.history.length) {
+      entry = data.history.pop(); item = getItem(entry.id); if (!item) continue;
+      item.count = Math.max(0, item.count - entry.delta);
+      refreshCard(item); refreshStats(); save(); toast('直前のカウントを取り消しました'); return;
     }
     refreshStats();
-  });
-  $('resetCountsBtn').addEventListener('click',()=>{
-    if(!confirm('すべての商品の販売数と売上を0にします。商品名と単価は残ります。\n集計の保存・メール送信は済んでいますか？'))return;
-    data.items.forEach(x=>x.count=0);data.history=[];renderItems();save();toast('販売数と売上を0に戻しました');
-  });
-  $('newEventBtn').addEventListener('click',()=>{
-    if(!confirm('商品名・単価・販売数・イベント名をすべて初期化します。\n現在の集計をメール送信またはCSV保存しましたか？'))return;
-    const savedEmail=data.sendTo;data=emptyData();data.sendTo=savedEmail;
-    $('eventName').value='';$('eventDate').value=data.eventDate;$('sendTo').value=data.sendTo;
-    renderItems();save();toast('新しいイベントを開始しました');
-  });
-  const reportItems=()=>data.items.map((item,i)=>({name:nameOf(item,i),count:item.count,price:item.price,amount:lineAmount(item),originalName:item.name})).filter(x=>x.originalName.trim()||x.count!==0||x.price!==null);
-  function showReport(){
-    $('reportSummary').textContent=`イベント：${data.eventName.trim()||'（イベント名未入力）'}　／　開催日：${data.eventDate||'未設定'}`;
-    const missing=missingCount();$('reportWarning').hidden=!missing;
-    $('reportWarning').textContent=missing?`単価未設定の商品 ${missing}品に販売記録があります。該当商品の金額は合計に含まれていません。`:'';
-    const tbody=$('reportRows');tbody.replaceChildren();const items=reportItems();
-    if(!items.length){const tr=document.createElement('tr');const td=document.createElement('td');td.colSpan=4;td.textContent='まだ商品・販売数が入力されていません。';tr.append(td);tbody.append(tr);}
-    for(const item of items){
-      const tr=document.createElement('tr');for(const txt of [item.name,item.price===null?'未設定':yen(item.price),number(item.count)+' 個',item.amount===null?'未設定':yen(item.amount)]){
-        const td=document.createElement('td');td.textContent=txt;tr.append(td);
-      }tbody.append(tr);
+  }, false);
+  byId('resetCountsBtn').addEventListener('click', function () {
+    var i;
+    if (!window.confirm('すべての販売数と売上を0に戻します。商品名と単価は残ります。\n集計は保存しましたか？')) return;
+    for (i = 0; i < data.items.length; i++) data.items[i].count = 0;
+    data.history = []; renderItems(); save(); toast('販売数と売上を0に戻しました');
+  }, false);
+  byId('newEventBtn').addEventListener('click', function () {
+    if (!window.confirm('現在のイベントを終了し、商品名・単価・販売数を初期化します。\n集計は保存しましたか？')) return;
+    var email = data.sendTo;
+    data = emptyData(); data.sendTo = email;
+    byId('eventName').value = ''; byId('eventDate').value = data.eventDate; byId('sendTo').value = email;
+    renderItems(); save(); toast('新しいイベントを開始しました');
+  }, false);
+  function reportItems() {
+    var items = [], i, item;
+    for (i = 0; i < data.items.length; i++) {
+      item = data.items[i];
+      if (String(item.name).replace(/^\s+|\s+$/g, '') || item.count !== 0 || item.price !== null) {
+        items.push({name: nameOf(item, i), price: item.price, count: item.count, revenue: amount(item)});
+      }
     }
-    $('reportTotal').textContent=number(total())+' 個';$('reportRevenue').textContent=yen(revenue());$('reportDialog').showModal();
+    return items;
   }
-  $('showReportBtn').addEventListener('click',showReport);
-  $('closeReportBtn').addEventListener('click',()=>$('reportDialog').close());
-  $('reportDialog').addEventListener('click',ev=>{if(ev.target===$('reportDialog'))$('reportDialog').close();});
-  function reportText(){
-    const lines=['【屋外イベント 販売数・売上報告】',`イベント名：${data.eventName.trim()||'（未入力）'}`,`開催日：${data.eventDate||'（未設定）'}`,`出力日時：${new Date().toLocaleString('ja-JP')}`,'','【商品別内訳】'];
-    const items=reportItems();if(!items.length)lines.push('（商品データなし）');
-    for(const item of items){lines.push(`${item.name}：${item.price===null?'単価未設定':yen(item.price)} × ${number(item.count)}個 = ${item.amount===null?'売上未計算':yen(item.amount)}`);}
-    lines.push('────────────────',`販売数合計：${number(total())} 個`,`売上合計（税込）：${yen(revenue())}`);
-    if(missingCount())lines.push(`※単価未設定で販売済みの商品が${missingCount()}品あり、その金額は合計に含まれません。`);
-    lines.push('','※同一商品の販売金額は、現在登録されている税込単価×販売数で計算。','※商品カウンターから作成したメールです（未送信）。');
+  function cell(row, str) { var td = document.createElement('td'); td.textContent = str; row.appendChild(td); }
+  function reportShow() {
+    var rows = byId('reportRows'), items = reportItems(), i, row;
+    byId('reportSummary').textContent = 'イベント：' + (data.eventName || '（未入力）') + ' ／ 開催日：' + data.eventDate;
+    byId('reportWarning').hidden = !missingCount();
+    byId('reportWarning').textContent = '単価が未設定の販売商品 ' + missingCount() + '品の売上は集計に含みません。';
+    rows.innerHTML = '';
+    if (!items.length) { row = document.createElement('tr'); cell(row, 'まだ商品・販売数が入力されていません。'); rows.appendChild(row); }
+    for (i = 0; i < items.length; i++) {
+      row = document.createElement('tr');
+      cell(row, items[i].name); cell(row, items[i].price === null ? '未設定' : yen(items[i].price));
+      cell(row, commas(items[i].count) + ' 個'); cell(row, items[i].revenue === null ? '未設定' : yen(items[i].revenue));
+      rows.appendChild(row);
+    }
+    byId('reportTotal').textContent = commas(totalCount()) + ' 個';
+    byId('reportRevenue').textContent = yen(totalRevenue());
+    if (typeof byId('reportDialog').showModal === 'function') {
+      byId('reportDialog').showModal();
+    } else {
+      byId('reportDialog').setAttribute('open', 'open');
+    }
+  }
+  function reportClose() {
+    var dlg = byId('reportDialog');
+    if (typeof dlg.close === 'function') dlg.close(); else dlg.removeAttribute('open');
+  }
+  byId('showReportBtn').addEventListener('click', reportShow, false);
+  byId('closeReportBtn').addEventListener('click', reportClose, false);
+  function reportText() {
+    var lines = ['【屋外イベント 販売数・売上報告】', 'イベント名：' + (data.eventName || '（未入力）'), '開催日：' + (data.eventDate || '（未設定）'), '出力日時：' + new Date().toLocaleString(), '', '【商品別内訳】'];
+    var items = reportItems(), i, it;
+    if (!items.length) lines.push('（商品データなし）');
+    for (i = 0; i < items.length; i++) {
+      it = items[i];
+      lines.push(it.name + '：' + (it.price === null ? '単価未設定' : yen(it.price)) + ' × ' + commas(it.count) + '個 = ' + (it.revenue === null ? '売上未計算' : yen(it.revenue)));
+    }
+    lines.push('────────────────', '販売数合計：' + commas(totalCount()) + ' 個', '売上合計（税込）：' + yen(totalRevenue()));
+    if (missingCount()) lines.push('※単価未設定で販売した商品 ' + missingCount() + '品は金額に含みません。');
+    lines.push('', '※金額は現在登録している税込単価×販売数で計算。', '※送信前の下書きです。');
     return lines.join('\n');
   }
-  function mailReport(){
-    const recipient=(data.sendTo||'').trim();
-    if(recipient&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)){toast('送信先メールアドレスを確認してください');$('sendTo').focus();return;}
-    const subject=`販売数・売上報告｜${data.eventName.trim()||'屋外イベント'}｜${data.eventDate||localDate()}`;
-    const url=`mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(reportText())}`;
-    if(url.length>9000){toast('データ量が多いためCSV共有・保存をご利用ください');return;}
-    // 自動送信ではなくメールアプリの下書きを開く。
-    window.location.href=url;
+  function mailReport() {
+    var address = String(data.sendTo || '').replace(/^\s+|\s+$/g, '');
+    if (address && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) { toast('送信先メールアドレスを確認してください'); return; }
+    var subject = '販売数・売上報告｜' + (data.eventName || '屋外イベント') + '｜' + data.eventDate;
+    var mailto = 'mailto:' + address + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(reportText());
+    if (mailto.length > 9000) { toast('データ量が多いためCSVで保存してください'); return; }
+    window.location.href = mailto;
   }
-  $('mailBtn').addEventListener('click',mailReport);
-  $('reportMailBtn').addEventListener('click',mailReport);
-  function csvCell(value){
-    let s=String(value??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;
-    return '"'+s.replace(/"/g,'""')+'"';
+  byId('mailBtn').addEventListener('click', mailReport, false);
+  byId('reportMailBtn').addEventListener('click', mailReport, false);
+  function csvCell(v) {
+    var value = v === null || typeof v === 'undefined' ? '' : String(v);
+    if (/^[=+@\-\t\r]/.test(value)) value = "'" + value;
+    return '"' + value.replace(/"/g, '""') + '"';
   }
-  function csvContent(){
-    const rows=[['屋外イベント 商品別販売数・売上'],['イベント名',data.eventName],['開催日',data.eventDate],['出力日時',new Date().toLocaleString('ja-JP')],[],['商品名','税込単価(円)','販売数(個)','売上(税込・円)']];
-    reportItems().forEach(item=>rows.push([item.name,item.price===null?'未設定':item.price,item.count,item.amount===null?'未設定':item.amount]));
-    rows.push(['合計','',total(),revenue()]);
-    if(missingCount())rows.push(['注意',`税込単価未設定で販売済みの商品${missingCount()}品は売上合計に含まず`]);
-    rows.push(['計算方法','現在登録されている税込単価×販売数で計算']);
-    return '\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n')+'\r\n';
+  function csvText() {
+    var items = reportItems(), rows = [['屋外イベント 販売数・売上'], ['イベント名', data.eventName], ['開催日', data.eventDate], [], ['商品名', '単価（税込）', '販売数', '売上（税込）']], i, j, lines = [], row;
+    for (i = 0; i < items.length; i++) rows.push([items[i].name, items[i].price === null ? '未設定' : items[i].price, items[i].count, items[i].revenue === null ? '未設定' : items[i].revenue]);
+    rows.push(['合計', '', totalCount(), totalRevenue()]);
+    for (i = 0; i < rows.length; i++) { row = []; for (j = 0; j < rows[i].length; j++) row.push(csvCell(rows[i][j])); lines.push(row.join(',')); }
+    return '\ufeff' + lines.join('\r\n') + '\r\n';
   }
-  function cleanFilename(s){return (s||'イベント').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,40)||'イベント';}
-  async function shareCsv(){
-    const fileName=`販売売上_${cleanFilename(data.eventDate)}_${cleanFilename(data.eventName)}.csv`;
-    const contents=csvContent();const blob=new Blob([contents],{type:'text/csv;charset=utf-8'});
-    const file=new File([blob],fileName,{type:'text/csv'});
-    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({title:'イベント販売数・売上',files:[file]});return;}
-      catch(err){if(err&&err.name==='AbortError')return;}
-    }
-    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fileName;document.body.append(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),30000);toast('CSVファイルを保存しました');
+  function shareCsv() {
+    try {
+      var blob = new Blob([csvText()], {type: 'text/csv;charset=utf-8'});
+      var url = (window.URL || window.webkitURL).createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = '商品カウンター売上_' + data.eventDate + '.csv';
+      a.style.display = 'none'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { (window.URL || window.webkitURL).revokeObjectURL(url); }, 30000);
+      toast('CSVの保存画面を確認してください。保存できない場合はメール送信をご利用ください。');
+    } catch (ex) { toast('このブラウザではCSV保存できません。メール送信をご利用ください。'); }
   }
-  $('csvBtn').addEventListener('click',shareCsv);
-  $('reportCsvBtn').addEventListener('click',shareCsv);
-  renderItems();save();
-  if('serviceWorker' in navigator&&location.protocol==='https:'){
-    window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  byId('csvBtn').addEventListener('click', shareCsv, false);
+  byId('reportCsvBtn').addEventListener('click', shareCsv, false);
+
+  renderItems(); save();
+  byId('startupNotice').style.display = 'none';
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', function () {
+      try { navigator.serviceWorker.register('./sw.js'); } catch (e) {}
+    }, false);
   }
-})();
+}());
 </script>
 </body>
 </html>
